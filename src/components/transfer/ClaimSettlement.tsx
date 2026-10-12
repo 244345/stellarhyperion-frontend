@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, type ReactElement } from "react";
+import { useEffect, useState, useCallback, type ReactElement } from "react";
 import { submitSettleClaim } from "../../contracts";
 import { useStellarWallet } from "../../wallets/stellar";
+import { fetchClaims, type FormattedClaim } from "../../lib/api";
 import styles from "./ClaimSettlement.module.css";
 
 interface ParkedClaim {
@@ -24,11 +25,75 @@ const SAMPLE_CLAIM: ParkedClaim = {
   status: "parked",
 };
 
+function formatAge(isoDate: string): string {
+  try {
+    const diffMs = Date.now() - new Date(isoDate).getTime();
+    if (isNaN(diffMs) || diffMs < 0) return "just now";
+    const mins = Math.floor(diffMs / 60000);
+    if (mins < 1) return "< 1m ago";
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  } catch {
+    return isoDate;
+  }
+}
+
 export function ClaimSettlement(): ReactElement {
   const { address } = useStellarWallet();
   const [claimIdInput, setClaimIdInput] = useState<string>("1");
+  const [addressInput, setAddressInput] = useState<string>("");
   const [currentClaim, setCurrentClaim] = useState<ParkedClaim | null>(SAMPLE_CLAIM);
   const [isSettling, setIsSettling] = useState<boolean>(false);
+  const [discoveredClaims, setDiscoveredClaims] = useState<readonly FormattedClaim[]>([]);
+  const [isLoadingClaims, setIsLoadingClaims] = useState<boolean>(false);
+  const [hasSearched, setHasSearched] = useState<boolean>(false);
+
+  const handleLookupAddress = useCallback(async (targetAddr: string) => {
+    const trimmed = targetAddr.trim();
+    if (!trimmed) {
+      setDiscoveredClaims([]);
+      setHasSearched(false);
+      return;
+    }
+    setIsLoadingClaims(true);
+    setHasSearched(true);
+    try {
+      const res = await fetchClaims({ recipient: trimmed, settled: "false" });
+      setDiscoveredClaims(res.claims);
+    } catch {
+      setDiscoveredClaims([]);
+    } finally {
+      setIsLoadingClaims(false);
+    }
+  }, []);
+
+  // Auto-detect when connected wallet address is available
+  useEffect(() => {
+    if (!address) {
+      return;
+    }
+    let active = true;
+    void fetchClaims({ recipient: address, settled: "false" }).then((res) => {
+      if (active) {
+        setAddressInput(address);
+        setDiscoveredClaims(res.claims);
+        setHasSearched(true);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [address]);
+
+  const handleAutoDetect = () => {
+    if (address) {
+      setAddressInput(address);
+      void handleLookupAddress(address);
+    }
+  };
 
   const handleLookup = () => {
     if (claimIdInput.trim() === "1") {
@@ -39,12 +104,25 @@ export function ClaimSettlement(): ReactElement {
         chain: "Stellar Testnet",
         token: "USDC",
         amount: "500.0000000",
-        recipient: "GCHPVETUL5E4YKDLMRIBFUGFK4PMYOVKPFALVSYMP2QDYAVBA3ITQDAI",
+        recipient:
+          addressInput.trim() || "GCHPVETUL5E4YKDLMRIBFUGFK4PMYOVKPFALVSYMP2QDYAVBA3ITQDAI",
         status: "parked",
       });
     } else {
       setCurrentClaim(null);
     }
+  };
+
+  const handleSelectClaim = (c: FormattedClaim) => {
+    setClaimIdInput(c.claimId);
+    setCurrentClaim({
+      id: c.claimId,
+      chain: c.chain,
+      token: c.token,
+      amount: c.amount,
+      recipient: c.recipient,
+      status: c.settled ? "settled" : "parked",
+    });
   };
 
   const handleSettle = async () => {
@@ -78,6 +156,90 @@ export function ClaimSettlement(): ReactElement {
         router parks the funds safely. Anyone can settle a parked claim once the recipient condition
         is resolved.
       </p>
+
+      <div className={styles.addressSearchSection}>
+        <label htmlFor="recipient-address-input" className={styles.label}>
+          Filter claims by recipient address
+        </label>
+        <div className={styles.addressInputRow}>
+          <input
+            id="recipient-address-input"
+            type="text"
+            className={styles.input}
+            value={addressInput}
+            onChange={(e) => {
+              setAddressInput(e.target.value);
+            }}
+            placeholder="Search destination account address..."
+          />
+          <button
+            type="button"
+            className={styles.searchBtn}
+            onClick={() => {
+              void handleLookupAddress(addressInput);
+            }}
+          >
+            find claims
+          </button>
+          {address && (
+            <button
+              type="button"
+              className={styles.autoDetectBtn}
+              onClick={handleAutoDetect}
+              title="Detect claims for connected wallet"
+            >
+              auto-detect for connected wallet
+            </button>
+          )}
+        </div>
+      </div>
+
+      {isLoadingClaims && <div className={styles.loadingMessage}>Searching parked claims...</div>}
+
+      {hasSearched && !isLoadingClaims && discoveredClaims.length === 0 && (
+        <div className={styles.emptyMessage}>
+          No pending parked claims found for this recipient address.
+        </div>
+      )}
+
+      {discoveredClaims.length > 0 && (
+        <div className={styles.discoveredSection}>
+          <h3 className={styles.discoveredHeading}>
+            Pending claims for recipient ({discoveredClaims.length})
+          </h3>
+          <div className={styles.claimsList}>
+            {discoveredClaims.map((c) => (
+              <div key={c.id} className={styles.claimDiscoveryCard}>
+                <div className={styles.cardHeader}>
+                  <span className={styles.cardId}>claim #{c.claimId}</span>
+                  <span className={styles.cardAge}>{formatAge(c.createdAt)}</span>
+                </div>
+                <div className={styles.cardDetails}>
+                  <div className={styles.cardRow}>
+                    <span className={styles.itemLabel}>amount</span>
+                    <span className={styles.itemValue}>
+                      {c.amount} {c.token}
+                    </span>
+                  </div>
+                  <div className={styles.cardRow}>
+                    <span className={styles.itemLabel}>origin chain</span>
+                    <span className={styles.itemValue}>{c.sourceChain}</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className={styles.selectClaimBtn}
+                  onClick={() => {
+                    handleSelectClaim(c);
+                  }}
+                >
+                  select to settle
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className={styles.lookupForm}>
         <div className={styles.field}>

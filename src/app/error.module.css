@@ -1,0 +1,79 @@
+.errorContainer {
+  min-height: 50vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6) var(--space-4);
+}
+
+.errorCard {
+  max-width: 32rem;
+  width: 100%;
+  background-color: var(--surface-raised);
+  border: 1px solid var(--edge-color);
+  border-radius: var(--radius-panel);
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.errorTag {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--bad);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.errorTitle {
+  font-family: var(--face-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.errorMessage {
+  font-family: var(--face-body);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.errorDigest {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-data);
+  background-color: var(--ink-4);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--edge-color);
+  border-radius: var(--radius-control);
+  word-break: break-all;
+}
+
+.retryBtn {
+  align-self: flex-start;
+  padding: 0.625rem 1.25rem;
+  background-color: var(--leg-origin);
+  border: 1px solid var(--edge-color);
+  border-radius: var(--radius-control);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    outline-color var(--duration-fast) var(--ease-standard);
+}
+
+.retryBtn:hover {
+  background-color: var(--copper-2);
+}
+
+.retryBtn:focus-visible {
+  outline: 2px solid var(--leg-origin);
+  outline-offset: 1px;
+}

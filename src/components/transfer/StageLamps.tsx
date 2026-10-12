@@ -8,19 +8,31 @@ export type StageState = "idle" | "active" | "completed" | "failed";
 export interface Stage {
   readonly id: string;
   readonly name: string;
-  readonly detail?: string;
+  readonly detail?: string | undefined;
   readonly state: StageState;
+  readonly eta?: string | undefined;
+  readonly elapsed?: string | undefined;
 }
 
 interface StageLampsProps {
   readonly stages: readonly Stage[];
-  readonly currentStageId?: string;
+  readonly currentStageId?: string | undefined;
+  readonly etaLabel?: string | undefined;
+  readonly elapsedText?: string | undefined;
 }
 
-export function StageLamps({ stages }: StageLampsProps): ReactElement {
+export function StageLamps({ stages, etaLabel, elapsedText }: StageLampsProps): ReactElement {
   return (
     <div className={styles.container} role="status" aria-label="Transfer stage progress">
-      <span className={styles.heading}>transfer progression</span>
+      <div className={styles.headerRow}>
+        <span className={styles.heading}>transfer progression</span>
+        {(etaLabel ?? elapsedText) && (
+          <div className={styles.timingMeta} role="timer" aria-live="off">
+            {elapsedText && <span className={styles.elapsedBadge}>{elapsedText}</span>}
+            {etaLabel && <span className={styles.etaBadge}>{etaLabel}</span>}
+          </div>
+        )}
+      </div>
       <div className={styles.stagesList}>
         {stages.map((stage, idx) => {
           const isLast = idx === stages.length - 1;
@@ -39,6 +51,9 @@ export function StageLamps({ stages }: StageLampsProps): ReactElement {
               <div>
                 <span className={styles.stageName}>{stage.name}</span>
                 {stage.detail && <span className={styles.stageDetail}> ({stage.detail})</span>}
+                {stage.state === "active" && stage.eta && (
+                  <span className={styles.stageEta}> ~{stage.eta} remaining</span>
+                )}
               </div>
               {!isLast && <span className={styles.connector} aria-hidden="true" />}
             </div>

@@ -4,6 +4,12 @@ import { useEffect, useState, useMemo, type ReactElement } from "react";
 import { Column, Footer, Header, Main, Shell } from "../../components/chrome";
 import { fetchTransfers, type FormattedTransfer } from "../../api";
 import { TransferList } from "../../components/transfers";
+import {
+  formatTransfersAsCsv,
+  formatTransfersAsJson,
+  getExportFilename,
+  triggerFileDownload,
+} from "../../lib/format";
 import styles from "./page.module.css";
 
 export default function TransfersPage(): ReactElement {
@@ -60,6 +66,18 @@ export default function TransfersPage(): ReactElement {
       return true;
     });
   }, [transfers, chainFilter, stageFilter, routeFilter, search]);
+
+  const handleExportCsv = () => {
+    const csv = formatTransfersAsCsv(filteredTransfers);
+    const filename = getExportFilename("csv");
+    triggerFileDownload(csv, filename, "text/csv;charset=utf-8;");
+  };
+
+  const handleExportJson = () => {
+    const json = formatTransfersAsJson(filteredTransfers);
+    const filename = getExportFilename("json");
+    triggerFileDownload(json, filename, "application/json;charset=utf-8;");
+  };
 
   const stats = useMemo(() => {
     const total = transfers.length;
@@ -169,6 +187,27 @@ export default function TransfersPage(): ReactElement {
                 <option value="parked">Parked</option>
                 <option value="failed">Failed</option>
               </select>
+
+              <div className={styles.exportControls}>
+                <button
+                  type="button"
+                  className={styles.exportBtn}
+                  onClick={handleExportCsv}
+                  disabled={filteredTransfers.length === 0}
+                  aria-label="Export filtered transfer records as CSV"
+                >
+                  Export CSV
+                </button>
+                <button
+                  type="button"
+                  className={styles.exportBtn}
+                  onClick={handleExportJson}
+                  disabled={filteredTransfers.length === 0}
+                  aria-label="Export filtered transfer records as JSON"
+                >
+                  Export JSON
+                </button>
+              </div>
             </div>
           </div>
 

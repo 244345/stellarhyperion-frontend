@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { archivo, plexMono } from "./fonts";
 import { PAGE_INK } from "./tokens";
 import { Providers } from "./providers";
+import { OfflineBanner } from "../components/common";
 import "./globals.css";
 
 /**
@@ -44,7 +45,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
-        <Providers>{children}</Providers>
+        <Providers>
+          <OfflineBanner />
+          {children}
+        </Providers>
       </body>
     </html>
   );

@@ -42,6 +42,141 @@
   margin: 0;
 }
 
+.addressSearchSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background-color: var(--ink-4);
+  border: 1px solid var(--edge-color);
+  border-radius: var(--radius-control);
+}
+
+.addressInputRow {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.autoDetectBtn {
+  padding: 0.5rem 0.875rem;
+  background-color: var(--ink-3);
+  border: 1px solid var(--leg-origin);
+  border-radius: var(--radius-control);
+  color: var(--leg-origin);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard);
+}
+
+.autoDetectBtn:hover {
+  background-color: var(--ink-2);
+  border-color: var(--copper-2);
+}
+
+.autoDetectBtn:focus-visible {
+  outline: 2px solid var(--leg-origin);
+  outline-offset: 1px;
+}
+
+.loadingMessage,
+.emptyMessage {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--text-data);
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--ink-4);
+  border: 1px solid var(--edge-color);
+  border-radius: var(--radius-control);
+}
+
+.discoveredSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.discoveredHeading {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.claimsList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: var(--space-3);
+}
+
+.claimDiscoveryCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background-color: var(--ink-4);
+  border: 1px solid var(--edge-color);
+  border-radius: var(--radius-control);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cardId {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--leg-origin);
+}
+
+.cardAge {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--text-data);
+}
+
+.cardDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.cardRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.selectClaimBtn {
+  padding: 0.375rem 0.75rem;
+  background-color: var(--ink-3);
+  border: 1px solid var(--edge-color-strong);
+  border-radius: var(--radius-control);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard);
+  margin-top: 0.25rem;
+}
+
+.selectClaimBtn:hover {
+  background-color: var(--ink-2);
+  border-color: var(--leg-origin);
+}
+
+.selectClaimBtn:focus-visible {
+  outline: 2px solid var(--leg-origin);
+}
+
 .lookupForm {
   display: flex;
   gap: var(--space-3);

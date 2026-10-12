@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type ReactElement } from "react";
+import { useEffect, useState, type ReactElement } from "react";
 import { ExternalLink } from "lucide-react";
 import { RouteKind } from "@hyperion/protocol";
 import { submitBridgeOut, STELLAR_USDC_SAC_ID } from "../../contracts";
@@ -41,6 +41,59 @@ function getStagesForRoute(route: RouteKind | null): Stage[] {
   ];
 }
 
+interface RouteDurationProfile {
+  readonly totalLabel: string;
+  readonly stageEstimates: Record<string, string>;
+}
+
+export function getRouteDurationProfile(route: RouteKind | null): RouteDurationProfile {
+  if (route === RouteKind.Cctp) {
+    return {
+      totalLabel: "~18m remaining",
+      stageEstimates: {
+        burn: "~20s",
+        attest: "~15m",
+        mint: "~30s",
+      },
+    };
+  }
+  if (route === RouteKind.Allbridge) {
+    return {
+      totalLabel: "~1m remaining",
+      stageEstimates: {
+        deposit: "~20s",
+        relay: "~1m",
+        release: "~20s",
+      },
+    };
+  }
+  if (route === RouteKind.AxelarGmp) {
+    return {
+      totalLabel: "~2m remaining",
+      stageEstimates: {
+        call: "~20s",
+        relay: "~2m",
+        execute: "~30s",
+      },
+    };
+  }
+  // Default Axelar ITS
+  return {
+    totalLabel: "~2m remaining",
+    stageEstimates: {
+      dispatch: "~20s",
+      relay: "~2m",
+      receive: "~30s",
+    },
+  };
+}
+
+export function formatElapsed(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")} elapsed`;
+}
+
 interface TransferFlowProps {
   readonly planner: RoutePlannerHook;
 }
@@ -54,16 +107,36 @@ export function TransferFlow({ planner }: TransferFlowProps): ReactElement {
   const [originTxHash, setOriginTxHash] = useState<string | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState<boolean>(false);
   const [highSlippageAcknowledged, setHighSlippageAcknowledged] = useState<boolean>(false);
+  const [startedAt, setStartedAt] = useState<number | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
 
+  const durationProfile = getRouteDurationProfile(selectedRoute);
   const isHighSlippage = input.slippageBps > 500;
+
+  useEffect(() => {
+    if (!activeTransfer || !startedAt) {
+      return;
+    }
+    const interval = setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000));
+    }, 1000);
+    return () => {
+      clearInterval(interval);
+    };
+  }, [activeTransfer, startedAt]);
 
   const handleInitiate = async () => {
     setActiveTransfer(true);
+    const now = Date.now();
+    setStartedAt(now);
+    setElapsedSeconds(0);
     const initial = getStagesForRoute(selectedRoute);
+    const profile = getRouteDurationProfile(selectedRoute);
     // Move first stage to active
     const running = initial.map((s, idx) => ({
       ...s,
       state: idx === 0 ? ("active" as const) : ("idle" as const),
+      eta: profile.stageEstimates[s.id],
     }));
     setStages(running);
 
@@ -222,7 +295,11 @@ export function TransferFlow({ planner }: TransferFlowProps): ReactElement {
 
       {activeTransfer ? (
         <>
-          <StageLamps stages={stages} />
+          <StageLamps
+            stages={stages}
+            etaLabel={durationProfile.totalLabel}
+            elapsedText={formatElapsed(elapsedSeconds)}
+          />
           {originTxHash && (
             <p className={styles.statusMessage}>
               origin transaction dispatched:{" "}
